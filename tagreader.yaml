@@ -1,26 +1,26 @@
 substitutions:
   name: nfckizi1
-  friendly_name: NFC KiZi1
+  friendly_name: Lector NFC
 
 esphome:
   name: $name
   friendly_name: $friendly_name
-  # Automatically add the mac address to the name
-  # so you can use a single firmware for all devices
+  # Añadir automáticamente la dirección MAC al nombre
+  # para utilizar un mismo firmware en todos los dispositivos
   #name_add_mac_suffix: true
 
-  # This will allow for (future) project identification,
-  # configuration and updates.
+  # Permite identificar el proyecto y gestionar
+  # su configuración y actualizaciones.
   project:
     name: adonno.tag_reader
     version: "1.4"
-    # If buzzer is enabled, notify on api connection success
+    # Avisar cuando la conexión con la API esté lista
   on_boot:
     priority: -10
     then:
     - wait_until:
         api.connected:
-    - logger.log: API is connected!
+    - logger.log: ¡API conectada!
     - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
     - light.turn_on:
         id: activity_led
@@ -38,46 +38,41 @@ esp32:
     type: arduino
 
 dashboard_import:
-  package_import_url: github://adonno/tagreader/tagreader.yaml
+  package_import_url: github://dewasha40/tagreader-spanish/tagreader.yaml@master
 
 
 wifi:
+  id: wifi_link
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  manual_ip:
-    # Set this to the IP of the ESP
-    static_ip: 192.168.1.97
-    gateway: 192.168.1.1
-    # The subnet of the network. 255.255.255.0 works for most home networks.
-    subnet: 255.255.255.0
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  # Activar el punto de acceso de recuperación si falla la conexión Wi-Fi
   ap:
-    ssid: "Nfckizi1 Fallback Hotspot"
+    ssid: "Lector NFC - Configuración"
     password: !secret defaultfallbackpw
 
 captive_portal:
 switch:
 - platform: template
-  name: "${friendly_name} Buzzer Enabled"
+  name: "${friendly_name} Zumbador activado"
   id: buzzer_enabled
   icon: mdi:volume-high
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
   entity_category: config
 - platform: template
-  name: "${friendly_name} LED enabled"
+  name: "${friendly_name} LED activado"
   id: led_enabled
   icon: mdi:alarm-light-outline
   optimistic: true
   restore_mode: RESTORE_DEFAULT_ON
   entity_category: config
-  
-# Define buttons for writing tags via HA 
+
+# Botones para escribir etiquetas desde Home Assistant
 button:
   - platform: template
-    name: "${friendly_name} Write Tag Random"
+    name: "${friendly_name} Escribir etiqueta aleatoria"
     id: write_tag_random
-    # Optional variables:
+    # Opciones adicionales:
     icon: "mdi:pencil-box"
     on_press:
       then:
@@ -86,7 +81,7 @@ button:
           brightness: 100%
           red: 100%
           green: 0%
-          blue: 100%    
+          blue: 100%
       - lambda: |-
           static const char alphanum[] = "0123456789abcdef";
           std::string uri = "https://www.home-assistant.io/tag/";
@@ -102,17 +97,19 @@ button:
             uri += alphanum[random_uint32() % (sizeof(alphanum) - 1)];
           auto message = new nfc::NdefMessage();
           message->add_uri_record(uri);
-          ESP_LOGD("tagreader", "Writing payload: %s", uri.c_str());
+          ESP_LOGD("tagreader", "Escribiendo contenido: %s", uri.c_str());
+          id(screen_status)="Acerca para escribir";
           id(pn532_board).write_mode(message);
       - rtttl.play: "write:d=24,o=5,b=100:b"
       - wait_until:
           not:
             pn532.is_writing:
+      - lambda: 'if (id(screen_status)!="Escritura cancelada") id(screen_status)="Verifica la etiqueta";'
       - light.turn_off:
           id: activity_led
       - rtttl.play: "write:d=24,o=5,b=100:b,b"
   - platform: template
-    name: "${friendly_name} Clean Tag"
+    name: "${friendly_name} Borrar etiqueta"
     id: clean_tag
     icon: "mdi:nfc-variant-off"
     on_press:
@@ -122,35 +119,36 @@ button:
           brightness: 100%
           red: 100%
           green: 64.7%
-          blue: 0%    
-      - lambda: 'id(pn532_board).clean_mode();'
+          blue: 0%
+      - lambda: 'id(screen_status)="Acerca para borrar"; id(pn532_board).clean_mode();'
       - rtttl.play: "write:d=24,o=5,b=100:b"
       - wait_until:
           not:
             pn532.is_writing:
+      - lambda: 'if (id(screen_status)!="Escritura cancelada") id(screen_status)="Verifica la etiqueta";'
       - light.turn_off:
           id: activity_led
       - rtttl.play: "write:d=24,o=5,b=100:b,b"
   - platform: template
-    name: "${friendly_name} Cancel writing"
+    name: "${friendly_name} Cancelar escritura"
     id: cancel_writing
     icon: "mdi:pencil-off"
     on_press:
       then:
-      - lambda: 'id(pn532_board).read_mode();'
+      - lambda: 'id(screen_status)="Escritura cancelada"; id(pn532_board).read_mode();'
       - light.turn_off:
           id: activity_led
       - rtttl.play: "write:d=24,o=5,b=100:b,b"
 
   - platform: restart
-    name: "${friendly_name} Restart"
+    name: "${friendly_name} Reiniciar"
     entity_category: config
-# Enable logging
+# Activar el registro
 logger:
   # level: VERY_VERBOSE
   # level: VERBOSE
 
-# Enable Home Assistant API
+# Activar la API de Home Assistant
 api:
   encryption:
     key: !secret encryptionkey
@@ -178,17 +176,19 @@ api:
         brightness: 100%
         red: 100%
         green: 0%
-        blue: 0%    
+        blue: 0%
     - lambda: |-
         auto message = new nfc::NdefMessage();
         std::string uri = "https://www.home-assistant.io/tag/";
         uri += tag_id;
         message->add_uri_record(uri);
+        id(screen_status)="Acerca para escribir";
         id(pn532_board).write_mode(message);
     - rtttl.play: "write:d=24,o=5,b=100:b"
     - wait_until:
         not:
           pn532.is_writing:
+    - lambda: 'if (id(screen_status)!="Escritura cancelada") id(screen_status)="Verifica la etiqueta";'
     - light.turn_off:
         id: activity_led
     - rtttl.play: "write:d=24,o=5,b=100:b,b"
@@ -203,7 +203,7 @@ api:
         brightness: 100%
         red: 100%
         green: 0%
-        blue: 0%    
+        blue: 0%
     - lambda: |-
         auto message = new nfc::NdefMessage();
         std::string uri = "";
@@ -216,18 +216,21 @@ api:
         if ( music_info != "" ) {
           message->add_text_record(text);
         }
+        id(screen_status)="Acerca para escribir";
         id(pn532_board).write_mode(message);
     - rtttl.play: "write:d=24,o=5,b=100:b"
     - wait_until:
         not:
           pn532.is_writing:
+    - lambda: 'if (id(screen_status)!="Escritura cancelada") id(screen_status)="Verifica la etiqueta";'
     - light.turn_off:
         id: activity_led
     - rtttl.play: "write:d=24,o=5,b=100:b,b"
 
-# Enable OTA upgrade
+# Actualizaciones inalámbricas OTA
 ota:
-  password: !secret otapassword
+  - platform: esphome
+    password: !secret otapassword
 
 i2c:
   sda: GPIO21
@@ -236,6 +239,18 @@ i2c:
   frequency: 400kHz
 
 globals:
+  - id: screen_status
+    type: std::string
+    initial_value: '"Acerca una etiqueta"'
+  - id: last_uid
+    type: std::string
+    initial_value: '"Sin lecturas"'
+  - id: tag_count
+    type: int
+    initial_value: '0'
+  - id: tag_present
+    type: bool
+    initial_value: 'false'
   - id: source
     type: std::string
   - id: url
@@ -258,16 +273,20 @@ pn532_i2c:
             green: 100%
             blue: 0%
             flash_length: 500ms
-    
-    - delay: 0.15s #to fix slow component
-        
+
+    - delay: 0.15s # Pausa para evitar lentitud del componente
+
     - lambda: |-
+        id(last_uid)=x;
+        id(tag_count)++;
+        id(tag_present)=true;
+        id(screen_status)="Etiqueta detectada";
         id(source)="";
         id(url)="";
         id(info)="";
         if (tag.has_ndef_message()) {
-          auto message = tag.get_ndef_message();
-          auto records = message->get_records();
+          const auto &message = tag.get_ndef_message();
+          const auto &records = message->get_records();
           for (auto &record : records) {
             std::string payload = record->get_payload();
             std::string type = record->get_type();
@@ -277,28 +296,28 @@ pn532_i2c:
             size_t sonos = payload.find("sonos-2://");
 
             if (type == "U" and hass != std::string::npos ) {
-              ESP_LOGD("tagreader", "Found Home Assistant tag NDEF");
+              ESP_LOGD("tagreader", "Etiqueta NDEF de Home Assistant detectada");
               id(source)="hass";
               id(url)=payload;
-              id(info)=payload.substr(hass + 34);
+              id(info)=payload.substr(hass + std::string("https://www.home-assistant.io/tag/").size());
             }
             else if (type == "U" and applemusic != std::string::npos ) {
-              ESP_LOGD("tagreader", "Found Apple Music tag NDEF");
+              ESP_LOGD("tagreader", "Etiqueta NDEF de Apple Music detectada");
               id(source)="amusic";
               id(url)=payload;
             }
             else if (type == "U" and spotify != std::string::npos ) {
-              ESP_LOGD("tagreader", "Found Spotify tag NDEF");
+              ESP_LOGD("tagreader", "Etiqueta NDEF de Spotify detectada");
               id(source)="spotify";
               id(url)=payload;
             }
             else if (type == "U" and sonos != std::string::npos ) {
-              ESP_LOGD("tagreader", "Found Sonos app tag NDEF");
+              ESP_LOGD("tagreader", "Etiqueta NDEF de Sonos detectada");
               id(source)="sonos";
               id(url)=payload;
             }
             else if (type == "T" ) {
-              ESP_LOGD("tagreader", "Found music info tag NDEF");
+              ESP_LOGD("tagreader", "Información musical NDEF detectada");
               id(info)=payload;
             }
             else if ( id(source)=="" ) {
@@ -309,13 +328,13 @@ pn532_i2c:
         else {
           id(source)="uid";
         }
-    
+
     - if:
         condition:
           lambda: 'return ( id(source)=="uid" );'
         then:
           - homeassistant.tag_scanned: !lambda |-
-              ESP_LOGD("tagreader", "No HA NDEF, using UID");
+              ESP_LOGD("tagreader", "Sin NDEF de Home Assistant; se utiliza el UID");
               return x;
         else:
         - if:
@@ -335,7 +354,7 @@ pn532_i2c:
                     return id(url);
                   info: !lambda |-
                     return id(info);
-    
+
     - if:
         condition:
           switch.is_on: buzzer_enabled
@@ -343,9 +362,10 @@ pn532_i2c:
         - rtttl.play: "success:d=24,o=5,b=100:c,g,b"
   on_tag_removed:
     then:
+    - lambda: 'id(tag_present)=false; id(screen_status)="Etiqueta retirada";'
     - homeassistant.event:
         event: esphome.tag_removed
-# Define the buzzer output
+# Salida del zumbador
 output:
 - platform: ledc
   pin: GPIO12
@@ -353,37 +373,38 @@ output:
 
 binary_sensor:
   - platform: status
-    name: "${friendly_name} Status"
+    id: ha_connected
+    name: "${friendly_name} Estado"
     entity_category: diagnostic
 
 
 text_sensor:
   - platform: version
     hide_timestamp: true
-    name: "${friendly_name} ESPHome Version"
+    name: "${friendly_name} Versión de ESPHome"
     entity_category: diagnostic
   - platform: wifi_info
     ip_address:
-      name: "${friendly_name} IP Address"
+      name: "${friendly_name} Dirección IP"
       icon: mdi:wifi
       entity_category: diagnostic
     ssid:
-      name: "${friendly_name} Connected SSID"
+      name: "${friendly_name} Red Wi-Fi conectada"
       icon: mdi:wifi-strength-2
       entity_category: diagnostic
 
-# Define buzzer as output for RTTTL
+# Utilizar el zumbador para las melodías RTTTL
 rtttl:
   output: buzzer
 
-# Configure LED
+# Configuración del LED
 light:
-- platform: neopixelbus
-  variant: WS2812
+- platform: esp32_rmt_led_strip
+  chipset: WS2812
   pin: GPIO15
   num_leds: 1
   flash_transition_length: 500ms
-  type: GRB
+  channel_colors: GRB
   id: activity_led
   name: "${friendly_name} LED"
-  restore_mode: ALWAYS_OFF    
+  restore_mode: ALWAYS_OFF

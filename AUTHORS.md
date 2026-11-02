@@ -1,17 +1,15 @@
-Tag Reader for Home Asistant is the love child of Andrea Donno and Paulus Schoutsen. It is a custom built
-RFID/NFC tag reader, specifically made as a stand-alone tag reader for.... You guessed it; [Home Assistant](https://home-assistant.io)
+# Autoría y agradecimientos
 
-Although [Adonno](https://github.com/adonno) and [Balloob](https://github.com/balloob) are the Tag Readers' fathers, a lot of other people have helped out
-by attributing code, testing 3D prints, coming up with better methods and being generally supportive! If you feel like you're one of the people
-that have earned to be on this list, please feel free to add your name and know that we appreciate your effort! A list such as this is doomed to
-have left someone out. For that, we're sorry! Add your name and forgive us the oversight!
+El lector de etiquetas para Home Assistant nació del trabajo de Andrea Donno y Paulus Schoutsen. Es un lector RFID/NFC independiente diseñado específicamente para [Home Assistant](https://home-assistant.io).
 
-This list is presented in random order...
+Además de [Adonno](https://github.com/adonno) y [Balloob](https://github.com/balloob), muchas personas han contribuido con código, pruebas de impresión 3D, mejoras y apoyo. Si has colaborado y falta tu nombre, puedes añadirlo: agradecemos tu esfuerzo y lamentamos cualquier omisión.
+
+La lista se presenta sin un orden específico:
 
 - [Jesse Hills](https://github.com/jesserockz)
 - [Andrea Donno](https://github.com/adonno)
 - [Paulus Schoutsen](https://github.com/balloob)
 - [Bryson Reece](https://github.com/brysonreece)
 - [Vincent Palmer](https://github.com/shift)
-- [Magnus Øverli](https://github.com/magnusoverli)
+- [Magnus Ã˜verli](https://github.com/magnusoverli)
 - [Tobias Sauerwein](https://github.com/cgtobi)

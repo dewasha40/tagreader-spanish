@@ -1,5 +1,5 @@
-alias: NFC play music tag url nfckizi1
-description: NFC play music tag with url from nfckizi1 on Kinderzimmer 1
+alias: NFC - Reproducir música de nfckizi1
+description: Ejemplo musical de nfckizi1; sustituye el lector y la entidad del reproductor por los tuyos.
 trigger:
   - platform: event
     event_type: esphome.music_tag

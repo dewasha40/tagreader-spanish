@@ -1,0 +1,67 @@
+# Variante con pantalla TFT ST7789V de 240 × 240 por SPI.
+# Cambia los pines y desplazamientos según tu módulo concreto.
+packages:
+  lector: !include tagreader.yaml
+
+substitutions:
+  tft_clk: GPIO18
+  tft_mosi: GPIO23
+  tft_cs: GPIO5
+  tft_dc: GPIO27
+  tft_reset: GPIO26
+  tft_backlight: GPIO25
+
+esphome:
+  includes:
+    - tft_ui.h
+
+# La variante TFT se mantiene al importar desde el panel de ESPHome.
+dashboard_import:
+  package_import_url: github://dewasha40/tagreader-spanish/tagreader-tft.yaml@master
+
+spi:
+  clk_pin: ${tft_clk}
+  mosi_pin: ${tft_mosi}
+
+output:
+  - platform: ledc
+    pin: ${tft_backlight}
+    id: tft_backlight_output
+
+light:
+  - platform: monochromatic
+    output: tft_backlight_output
+    id: tft_backlight_light
+    name: "${friendly_name} Retroiluminación"
+    restore_mode: ALWAYS_ON
+
+font:
+  - file: fonts/DejaVuSans.ttf
+    id: tft_small
+    size: 12
+    glyphsets: [GF_Latin_Core]
+  - file: fonts/DejaVuSans.ttf
+    id: tft_title
+    size: 20
+    glyphsets: [GF_Latin_Core]
+
+display:
+  - platform: ili9xxx
+    model: ST7789V
+    id: tft_screen
+    cs_pin: ${tft_cs}
+    dc_pin: ${tft_dc}
+    reset_pin: ${tft_reset}
+    invert_colors: true
+    color_palette: 8BIT
+    dimensions:
+      width: 240
+      height: 240
+      offset_height: 0
+      offset_width: 0
+    update_interval: 250ms
+    lambda: |-
+      tagreader_tft::draw(it, id(tft_small), id(tft_title),
+        id(wifi_link).is_connected(), id(ha_connected).state,
+        id(screen_status), id(last_uid), id(source), id(info),
+        id(tag_count), id(tag_present));

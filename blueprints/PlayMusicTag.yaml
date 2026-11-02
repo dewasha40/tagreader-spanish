@@ -1,24 +1,30 @@
 blueprint:
-  name: Play Music Tag
-  description: Play music tag NDEF url
+  name: Reproducir música desde una etiqueta NFC
+  description: Reproduce la dirección musical de una etiqueta NDEF.
   domain: automation
   input:
+    reader_name:
+      name: Nombre técnico del lector
+      description: Debe coincidir con substitutions.name del firmware, no con el nombre visible del dispositivo.
+      default: nfckizi1
+      selector:
+        text:
     reader_id:
-      name: ESPHome NFC reader device
-      description: This is your NFC reader
+      name: Dispositivo lector NFC de ESPHome
+      description: Selecciona tu lector NFC.
       selector:
         device:
           integration: esphome
     player:
-      name: Media Player
-      description: This is your media player for this reader
+      name: Reproductor multimedia
+      description: Selecciona el reproductor asociado a este lector.
       selector:
         entity:
           domain: media_player
 
 variables:
     device_id: !input reader_id
-    reader: '{{ device_attr(device_id, "name") }}'
+    reader: !input reader_name
 
 trigger:
   - platform: event
